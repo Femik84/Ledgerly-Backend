@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Transaction
 from .serializers import (
     TransactionSerializer,
@@ -13,7 +13,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     A viewset for CRUD operations on transactions.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = Transaction.objects.all()
 
     def get_queryset(self):

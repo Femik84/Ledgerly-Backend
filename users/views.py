@@ -15,7 +15,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
 
     queryset = CustomUser.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_serializer_class(self):
         """Pick serializer based on action."""
