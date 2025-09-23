@@ -13,7 +13,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     A viewset for CRUD operations on transactions.
     """
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     queryset = Transaction.objects.all()
 
     def get_queryset(self):
