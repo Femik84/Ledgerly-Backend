@@ -50,7 +50,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     """
 
     email = models.EmailField(unique=True)
-    name = models.CharField(max_length=150)
+    name = models.CharField(max_length=150, blank=True, null=True)
     image = models.ImageField(upload_to="profile_images/", null=True, blank=True)
 
     # New financial fields

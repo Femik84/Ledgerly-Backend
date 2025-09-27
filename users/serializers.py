@@ -1,12 +1,15 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import CustomUser
-from transactions.serializers import TransactionSerializer  # import your transaction serializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from transactions.serializers import TransactionSerializer
+
+CustomUser = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for reading/updating user objects with nested transactions."""
 
-    transactions = TransactionSerializer(many=True, read_only=True)  # nested transactions
+    transactions = TransactionSerializer(many=True, read_only=True)
 
     class Meta:
         model = CustomUser
@@ -19,7 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
             "balance",
             "income_total",
             "expense_total",
-            "transactions",  # include nested transactions
+            "transactions",
         ]
         read_only_fields = [
             "id",
@@ -32,9 +35,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating new users with password + image required."""
+    """Serializer for creating new users with password, and returning JWT tokens."""
 
     password = serializers.CharField(write_only=True, min_length=6)
+    refresh = serializers.CharField(read_only=True)
+    access = serializers.CharField(read_only=True)
 
     class Meta:
         model = CustomUser
@@ -48,20 +53,36 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "balance",
             "income_total",
             "expense_total",
+            "refresh",
+            "access",
         ]
-        read_only_fields = ["id", "date_joined", "balance", "income_total", "expense_total"]
-
-    def validate_image(self, value):
-        if not value:
-            raise serializers.ValidationError("Profile image is required.")
-        return value
+        read_only_fields = [
+            "id",
+            "date_joined",
+            "balance",
+            "income_total",
+            "expense_total",
+            "refresh",
+            "access",
+        ]
 
     def create(self, validated_data):
         password = validated_data.pop("password")
-        user = CustomUser.objects.create_user(**validated_data)
-        user.set_password(password)
-        user.save()
+        user = CustomUser.objects.create_user(password=password, **validated_data)
+
+        # generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        user.refresh = str(refresh)
+        user.access = str(refresh.access_token)
+
         return user
+
+    def to_representation(self, instance):
+        """Return user data + tokens after registration."""
+        rep = super().to_representation(instance)
+        rep["refresh"] = getattr(instance, "refresh", None)
+        rep["access"] = getattr(instance, "access", None)
+        return rep
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

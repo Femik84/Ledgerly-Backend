@@ -1,5 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from .models import CustomUser
 from .serializers import (
     UserSerializer,
@@ -26,10 +28,20 @@ class UserViewSet(viewsets.ModelViewSet):
         elif self.action == "retrieve":
             # return full serializer with nested transactions
             return UserSerializer
-        return UserSerializer  # optionally, use a simpler serializer for 'list'
+        return UserSerializer  # default
 
     def get_permissions(self):
         """Custom permissions: anyone can register, others need auth."""
         if self.action == "create":
             return [AllowAny()]
+        if self.action == "me":
+            return [IsAuthenticated()]
         return super().get_permissions()
+
+    @action(detail=False, methods=["get"], url_path="me")
+    def me(self, request):
+        """
+        Get the currently authenticated user's profile.
+        """
+        serializer = UserSerializer(request.user, context={"request": request})
+        return Response(serializer.data)
