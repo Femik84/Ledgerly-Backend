@@ -31,6 +31,7 @@ urlpatterns = [
     path("api/", include("users.urls")),        # users app
     path("api/", include("category.urls")),     # category app
     path("api/", include("transactions.urls")),
+    path("api/", include("budgets.urls")),      # budgets app
 
     # JWT Auth endpoints
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

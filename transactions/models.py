@@ -2,6 +2,7 @@ from django.db import models, transaction
 from django.utils import timezone
 from django.conf import settings
 from category.models import Category
+from budgets.models import Budget   # ✅ import Budget model
 
 
 class Transaction(models.Model):
@@ -20,6 +21,13 @@ class Transaction(models.Model):
     type = models.CharField(max_length=7, choices=TYPE_CHOICES)
     category = models.ForeignKey(
         Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transactions"
+    )
+    budget = models.ForeignKey(   # ✅ NEW FIELD
+        Budget,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
