@@ -3,6 +3,7 @@ from django.contrib.auth.models import (
     AbstractBaseUser, PermissionsMixin, BaseUserManager
 )
 from django.utils import timezone
+from django.conf import settings
 
 
 class CustomUserManager(BaseUserManager):
@@ -48,14 +49,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     income_total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     expense_total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
 
-    # ✅ Firebase push notification token
-    firebase_notification_token = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        help_text="Firebase Cloud Messaging (FCM) token for this user’s device.",
-    )
-
     date_joined = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -77,3 +70,19 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = "user"
         verbose_name_plural = "users"
+
+
+# ✅ NEW: UserDevice model to support multiple devices per user
+class UserDevice(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="devices"
+    )
+    fcm_token = models.CharField(max_length=255, unique=True)
+    device_name = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_active = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.email} — {self.device_name or 'Unknown Device'}"
