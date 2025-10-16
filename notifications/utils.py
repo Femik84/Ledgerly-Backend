@@ -1,6 +1,7 @@
 from firebase_admin import messaging
 from notifications.models import Notification
 from .firebase_init import app  # ensure Firebase is initialized
+from users.models import UserDevice  # import your UserDevice model
 
 
 def send_firebase_notification(fcm_token, title, body, data=None):
@@ -34,7 +35,7 @@ def send_firebase_notification(fcm_token, title, body, data=None):
 
 def create_budget_notification(user, title, message, type="budget"):
     """
-    Creates a Notification in the database and sends a Firebase push notification to the user's device.
+    Creates a Notification in the database and sends a Firebase push notification to all of the user's devices.
     """
     try:
         # Save to database
@@ -45,13 +46,16 @@ def create_budget_notification(user, title, message, type="budget"):
             type=type
         )
 
-        # Get user's FCM token
-        fcm_token = getattr(user, "firebase_notification_token", None)
+        # Get all devices for this user
+        devices = user.devices.all()  # related_name="devices" in UserDevice
 
-        if fcm_token:
-            send_firebase_notification(fcm_token, title, message)
-        else:
-            print("[Notification] ⚠️ No Firebase token found for user — skipping push.")
+        if not devices:
+            print("[Notification] ⚠️ No devices found for user — skipping push.")
+            return
+
+        # Send FCM to each device
+        for device in devices:
+            send_firebase_notification(device.fcm_token, title, message)
 
     except Exception as e:
         print(f"[Notification Error] ❌ {e}")
