@@ -1,14 +1,18 @@
+import os
+import json
 import firebase_admin
 from firebase_admin import credentials
-from django.conf import settings
-import os
-
-# Path to your service account key file
-cred_path = os.path.join(settings.BASE_DIR, "firebase-admin-key.json")
 
 # Initialize Firebase app only once
 if not firebase_admin._apps:
-    cred = credentials.Certificate(cred_path)
-    app = firebase_admin.initialize_app(cred)  
+    # Get the JSON string from environment variable
+    firebase_creds = os.environ.get("FIREBASE_CREDENTIALS")
+
+    if firebase_creds:
+        cred_dict = json.loads(firebase_creds)  # parse JSON string
+        cred = credentials.Certificate(cred_dict)
+        app = firebase_admin.initialize_app(cred)
+    else:
+        raise Exception("FIREBASE_CREDENTIALS environment variable not set")
 else:
-    app = firebase_admin.get_app()  
+    app = firebase_admin.get_app()
