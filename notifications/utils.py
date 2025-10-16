@@ -1,5 +1,5 @@
 from firebase_admin import messaging
-from notifications.models import Notification
+from notifications.models import Notification, UserDevice
 from .firebase_init import app  # ensure Firebase is initialized
 
 
@@ -12,7 +12,6 @@ def send_firebase_notification(fcm_token, title, body, data=None):
         return
 
     try:
-        # Create FCM message
         message = messaging.Message(
             notification=messaging.Notification(
                 title=title,
@@ -22,7 +21,6 @@ def send_firebase_notification(fcm_token, title, body, data=None):
             token=fcm_token,
         )
 
-        # Send message via Firebase Admin SDK
         response = messaging.send(message)
         print(f"✅ [FCM] Notification sent successfully. Response ID: {response}")
 
@@ -34,7 +32,8 @@ def send_firebase_notification(fcm_token, title, body, data=None):
 
 def create_budget_notification(user, title, message, type="budget"):
     """
-    Creates a Notification in the database and sends a Firebase push notification to the user's device.
+    Creates a Notification in the database and sends a Firebase push notification
+    to all devices registered for the user.
     """
     try:
         # Save to database
@@ -45,13 +44,15 @@ def create_budget_notification(user, title, message, type="budget"):
             type=type
         )
 
-        # Get user's FCM token
-        fcm_token = getattr(user, "firebase_notification_token", None)
+        # Get all user's devices
+        devices = UserDevice.objects.filter(user=user)
+        if not devices.exists():
+            print("[Notification] ⚠️ No devices found for user — skipping push.")
+            return
 
-        if fcm_token:
-            send_firebase_notification(fcm_token, title, message)
-        else:
-            print("[Notification] ⚠️ No Firebase token found for user — skipping push.")
+        # Send notification to each device
+        for device in devices:
+            send_firebase_notification(device.fcm_token, title, message)
 
     except Exception as e:
         print(f"[Notification Error] ❌ {e}")

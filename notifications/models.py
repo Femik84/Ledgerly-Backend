@@ -22,3 +22,19 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.user})"
+
+
+# ✅ New model to store multiple devices per user
+class UserDevice(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="devices"
+    )
+    fcm_token = models.CharField(max_length=512, unique=True)
+    device_name = models.CharField(max_length=100, blank=True, null=True)  # optional
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.fcm_token[:20]}"
